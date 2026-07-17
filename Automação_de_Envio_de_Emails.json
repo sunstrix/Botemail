@@ -125,7 +125,7 @@
       "parameters": {
         "fromEmail": "supervisoras@didier.com.br",
         "toEmail": "={{ $json.Email }}",
-        "subject": "=Sentimos sua falta, {{ $json.Nome }}! Vamos voltar a faturar juntos? TESTE DE FERRAMENTE DE DISPARO DE E-mail",
+        "subject": "=Sentimos sua falta, {{ $json.Nome }}! Vamos voltar a faturar juntos? TESTE DE FERRAMENTA DE DISPARO DE E-mail",
         "emailFormat": "text",
         "text": "=Olá, {{ $json.Nome }}, tudo bem?\n\nPassando para dizer que sentimos a sua falta por aqui! A nossa parceria sempre foi muito importante para nós, e queremos te ver brilhando e lucrando novamente.\n\nTemos muitas novidades, lançamentos incríveis e condições especiais preparadas exclusivamente para ajudar você a impulsionar suas vendas nesta temporada.\n\nQue tal reativar o seu cadastro hoje mesmo? É super rápido!\n\nPara conhecer as novidades e garantir suas vantagens, clique no link abaixo e fale direto com a nossa equipe pelo WhatsApp:\n👉 https://wa.me/551143322311\n\nEstamos te esperando de braços abertos!\n\nAbraços,",
         "options": {
