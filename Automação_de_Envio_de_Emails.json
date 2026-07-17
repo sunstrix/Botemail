@@ -83,13 +83,43 @@
     },
     {
       "parameters": {
-        "maxItems": 200
+        "jsCode": "const items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  items[i].json._indiceTemp = i;\n}\nreturn items;"
       },
-      "type": "n8n-nodes-base.limit",
-      "typeVersion": 1,
-      "position": [80, 0],
-      "id": "limit1",
-      "name": "Limitar a 200"
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [80, 80],
+      "id": "code-marcar-indice",
+      "name": "Marcar Índice"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "limit-check-1",
+              "leftValue": "={{ $json._indiceTemp }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "smaller",
+                "name": "filter.operator.smaller"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [240, 80],
+      "id": "if-limit-1",
+      "name": "Dentro do Limite Diário"
     },
     {
       "parameters": {
@@ -104,7 +134,7 @@
       },
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
-      "position": [280, 0],
+      "position": [400, 0],
       "id": "243964a9-3b9c-4597-a7a1-5780c39ffe5d",
       "name": "Send an Email",
       "webhookId": "a30eafa1-4693-461d-821c-ebf7fabf0de7",
@@ -121,9 +151,29 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [480, 0],
+      "position": [560, 0],
       "id": "code1",
       "name": "Atualizar Status"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nfor (const item of items) {\n  delete item.json._indiceTemp;\n}\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 0],
+      "id": "code-limpar-a",
+      "name": "Limpar Índice A"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nfor (const item of items) {\n  delete item.json._indiceTemp;\n}\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 160],
+      "id": "code-limpar-b",
+      "name": "Limpar Índice B"
     },
     {
       "parameters": {
@@ -131,7 +181,7 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [480, 160],
+      "position": [880, 160],
       "id": "merge1",
       "name": "Unir Dados"
     },
@@ -143,7 +193,7 @@
       },
       "type": "n8n-nodes-base.spreadsheetFile",
       "typeVersion": 1,
-      "position": [680, 160],
+      "position": [1040, 160],
       "id": "sheet1",
       "name": "Converter para XLSX"
     },
@@ -156,7 +206,7 @@
       },
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
-      "position": [880, 160],
+      "position": [1200, 160],
       "id": "write1",
       "name": "Salvar Arquivo Atualizado"
     }
@@ -211,7 +261,7 @@
       "main": [
         [
           {
-            "node": "Limitar a 200",
+            "node": "Marcar Índice",
             "type": "main",
             "index": 0
           }
@@ -225,11 +275,29 @@
         ]
       ]
     },
-    "Limitar a 200": {
+    "Marcar Índice": {
+      "main": [
+        [
+          {
+            "node": "Dentro do Limite Diário",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dentro do Limite Diário": {
       "main": [
         [
           {
             "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Limpar Índice B",
             "type": "main",
             "index": 0
           }
@@ -251,9 +319,31 @@
       "main": [
         [
           {
+            "node": "Limpar Índice A",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar Índice A": {
+      "main": [
+        [
+          {
             "node": "Unir Dados",
             "type": "main",
             "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar Índice B": {
+      "main": [
+        [
+          {
+            "node": "Unir Dados",
+            "type": "main",
+            "index": 1
           }
         ]
       ]
