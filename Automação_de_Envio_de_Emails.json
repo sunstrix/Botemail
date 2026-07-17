@@ -43,10 +43,7 @@
     {
       "parameters": {
         "operation": "xlsx",
-        "options": {
-          "headerRow": true,
-          "sheetName": "Sheet1"
-        }
+        "options": {}
       },
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1.1,
@@ -56,39 +53,48 @@
     },
     {
       "parameters": {
-        "jsCode": "// Entrada: todos os itens (cada um com json contendo Nome, Email, Status)\nconst allItems = $input.all();\n\n// Arrays para os dois outputs\nconst todos = [];\nconst candidatos = [];\n\nfor (let i = 0; i < allItems.length; i++) {\n    const item = allItems[i];\n    // Garantir campos\n    item.json.Nome = item.json.Nome || \"\";\n    item.json.Email = item.json.Email || \"\";\n    item.json.Status = item.json.Status || \"\";\n    // Adicionar índice\n    item.json._index = i;\n\n    // Clonar para evitar referência\n    todos.push(item);\n\n    // Verificar se Status está vazio (string vazia, null, undefined)\n    const status = item.json.Status;\n    if (status === \"\" || status == null || status === undefined) {\n        // Candidato a envio\n        candidatos.push(item);\n    }\n}\n\n// Retornar dois outputs\nreturn [\n    todos,      // output 0\n    candidatos  // output 1\n];",
-        "numberOutputs": 2
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "23d1d773-a0f1-4a28-b3aa-ca518539dcfd",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isEmpty",
+                "name": "filter.operator.isEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [-160, 80],
-      "id": "code-preparar-indexar",
-      "name": "Preparar e Indexar"
-    },
-    {
-      "parameters": {
-        "maxItems": 200
-      },
-      "type": "n8n-nodes-base.limit",
-      "typeVersion": 1,
-      "position": [40, 160],
-      "id": "limit1",
-      "name": "Limitar a 200"
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [-120, 80],
+      "id": "91652148-993b-411c-918a-a533d4846c42",
+      "name": "If Status Vazio"
     },
     {
       "parameters": {
         "fromEmail": "supervisoras@didier.com.br",
         "toEmail": "={{ $json.Email }}",
-        "subject": "=Sentimos sua falta, {{ $json.Nome }}! Vamos voltar a faturar juntos? TESTE DE FERRAMENTA DE DISPARO DE E-mail",
+        "subject": "=Sentimos sua falta, {{ $json.Nome }}! Vamos voltar a faturar juntos?",
         "emailFormat": "text",
-        "text": "=Olá, {{ $json.Nome }}, tudo bem?\n\nPassando para dizer que sentimos a sua falta por aqui! A nossa parceria sempre foi muito importante para nós, e queremos te ver brilhando e lucrando novamente.\n\nTemos muitas novidades, lançamentos incríveis e condições especiais preparadas exclusivamente para ajudar você a impulsionar suas vendas nesta temporada.\n\nQue tal reativar o seu cadastro hoje mesmo? É super rápido!\n\nPara conhecer as novidades e garantir suas vantagens, clique no link abaixo e fale direto com a nossa equipe pelo WhatsApp:\n https://wa.me/551143322311\n\nEstamos te esperando de braços abertos!\n\nAbraços,",
+        "text": "=Olá, {{ $json.Nome }}, tudo bem?\n\nPassando para dizer que sentimos a sua falta por aqui! A nossa parceria sempre foi muito importante para nós.\n\nQue tal reativar o seu cadastro hoje mesmo?\n\nFale direto com a nossa equipe pelo WhatsApp:\n👉 https://wa.me/551143322311\n\nAbraços,",
         "options": {
           "onError": "continueErrorOutput"
         }
       },
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
-      "position": [240, 160],
+      "position": [80, 0],
       "id": "243964a9-3b9c-4597-a7a1-5780c39ffe5d",
       "name": "Send an Email",
       "webhookId": "a30eafa1-4693-461d-821c-ebf7fabf0de7",
@@ -101,25 +107,23 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nconst now = new Date();\nconst dataHora = now.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });\n\nfor (const item of items) {\n    // Verifica se houve erro (propriedade 'error' pode estar presente)\n    const erro = item.json.error;\n    if (erro) {\n        item.json.Status = `Erro: ${erro.message || erro}`;\n    } else {\n        item.json.Status = `Enviado em ${dataHora}`;\n    }\n}\nreturn items;",
-        "numberOutputs": 1
+        "jsCode": "const items = $input.all();\nfor (const item of items) {\n  if (item.error) {\n    item.json.Status = \"Erro: \" + item.error.message;\n  } else {\n    const now = new Date();\n    const dateStr = now.toLocaleDateString('pt-BR');\n    const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });\n    item.json.Status = \"Enviado em \" + dateStr + \" às \" + timeStr;\n  }\n}\nreturn items;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [440, 160],
-      "id": "code-atualizar-status",
+      "position": [280, 0],
+      "id": "code1",
       "name": "Atualizar Status"
     },
     {
       "parameters": {
-        "jsCode": "// Este nó tem 2 inputs:\n//   - Input 0: todos os originais (com _index)\n//   - Input 1: itens processados (com _index e Status atualizado)\n\nconst inputs = $input.all();\nconst originais = inputs[0];  // array de itens do input 0\nconst processados = inputs[1]; // array de itens do input 1\n\n// Criar mapa dos processados por _index\nconst mapa = new Map();\nfor (const p of processados) {\n    mapa.set(p.json._index, p.json.Status);\n}\n\n// Atualizar os originais\nconst resultado = [];\nfor (const item of originais) {\n    const idx = item.json._index;\n    if (mapa.has(idx)) {\n        item.json.Status = mapa.get(idx);\n    }\n    // Remover _index\n    delete item.json._index;\n    // Garantir campos (já garantidos)\n    resultado.push(item);\n}\n\nreturn resultado;",
-        "numberInputs": 2
+        "mode": "append"
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [880, 160],
-      "id": "code-mesclar",
-      "name": "Mesclar e Remover _index"
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [480, 160],
+      "id": "merge1",
+      "name": "Unir Dados"
     },
     {
       "parameters": {
@@ -132,7 +136,7 @@
       },
       "type": "n8n-nodes-base.spreadsheetFile",
       "typeVersion": 1,
-      "position": [1080, 160],
+      "position": [680, 160],
       "id": "sheet1",
       "name": "Converter para XLSX"
     },
@@ -145,7 +149,7 @@
       },
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
-      "position": [1280, 160],
+      "position": [880, 160],
       "id": "write1",
       "name": "Salvar Arquivo Atualizado"
     }
@@ -189,38 +193,27 @@
       "main": [
         [
           {
-            "node": "Preparar e Indexar",
+            "node": "If Status Vazio",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Preparar e Indexar": {
-      "main": [
-        [
-          {
-            "node": "Mesclar e Remover _index",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Limitar a 200",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Limitar a 200": {
+    "If Status Vazio": {
       "main": [
         [
           {
             "node": "Send an Email",
             "type": "main",
             "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unir Dados",
+            "type": "main",
+            "index": 1
           }
         ]
       ]
@@ -247,14 +240,14 @@
       "main": [
         [
           {
-            "node": "Mesclar e Remover _index",
+            "node": "Unir Dados",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ]
       ]
     },
-    "Mesclar e Remover _index": {
+    "Unir Dados": {
       "main": [
         [
           {
