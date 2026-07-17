@@ -200,7 +200,7 @@
     {
       "parameters": {
         "operation": "write",
-        "fileSelector": "/home/node/.n8n-files/contatos.xlsx",
+        "fileName": "/home/node/.n8n-files/contatos.xlsx",
         "dataPropertyName": "data",
         "options": {}
       },
