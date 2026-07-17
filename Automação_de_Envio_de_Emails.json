@@ -1,0 +1,300 @@
+{
+  "name": "Automação de Envio de E-mails",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-768, 80],
+      "id": "eaff00b4-34cf-4e9b-84f0-c10b5505ee38",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "intervalValue": 1
+            }
+          ],
+          "triggerAtHour": 9,
+          "triggerAtMinute": 0
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [-768, -80],
+      "id": "sched1",
+      "name": "Agendado Diariamente"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "/home/node/.n8n-files/contatos.xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [-560, 80],
+      "id": "73588ce8-96ee-4fb9-a7d8-8a2a270dc021",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [-352, 80],
+      "id": "df11c52f-5bcd-46b7-a8a8-87efe31cf406",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "23d1d773-a0f1-4a28-b3aa-ca518539dcfd",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isEmpty",
+                "name": "filter.operator.isEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [-120, 80],
+      "id": "91652148-993b-411c-918a-a533d4846c42",
+      "name": "If Status Vazio"
+    },
+    {
+      "parameters": {
+        "maxItems": 200
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [80, 0],
+      "id": "limit1",
+      "name": "Limitar a 200"
+    },
+    {
+      "parameters": {
+        "fromEmail": "supervisoras@didier.com.br",
+        "toEmail": "={{ $json.Email }}",
+        "subject": "=Sentimos sua falta, {{ $json.Nome }}! Vamos voltar a faturar juntos? TESTE DE FERRAMENTE DE DISPARO DE E-mail",
+        "emailFormat": "text",
+        "text": "=Olá, {{ $json.Nome }}, tudo bem?\n\nPassando para dizer que sentimos a sua falta por aqui! A nossa parceria sempre foi muito importante para nós, e queremos te ver brilhando e lucrando novamente.\n\nTemos muitas novidades, lançamentos incríveis e condições especiais preparadas exclusivamente para ajudar você a impulsionar suas vendas nesta temporada.\n\nQue tal reativar o seu cadastro hoje mesmo? É super rápido!\n\nPara conhecer as novidades e garantir suas vantagens, clique no link abaixo e fale direto com a nossa equipe pelo WhatsApp:\n👉 https://wa.me/551143322311\n\nEstamos te esperando de braços abertos!\n\nAbraços,",
+        "options": {
+          "onError": "continueRegularOutput"
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [280, 0],
+      "id": "243964a9-3b9c-4597-a7a1-5780c39ffe5d",
+      "name": "Send an Email",
+      "webhookId": "a30eafa1-4693-461d-821c-ebf7fabf0de7",
+      "credentials": {
+        "smtp": {
+          "id": "WXHetXL3hNWApJKc",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  if (item.error) {\n    item.json.Status = `Erro: ${item.error.message}`;\n  } else {\n    const now = new Date();\n    const dateStr = now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });\n    const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });\n    item.json.Status = `Enviado em ${dateStr} às ${timeStr}`;\n  }\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 0],
+      "id": "code1",
+      "name": "Atualizar Status"
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [480, 160],
+      "id": "merge1",
+      "name": "Unir Dados"
+    },
+    {
+      "parameters": {
+        "operation": "toFile",
+        "fileFormat": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 1,
+      "position": [680, 160],
+      "id": "sheet1",
+      "name": "Converter para XLSX"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileSelector": "/home/node/.n8n-files/contatos.xlsx",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [880, 160],
+      "id": "write1",
+      "name": "Salvar Arquivo Atualizado"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agendado Diariamente": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "If Status Vazio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Status Vazio": {
+      "main": [
+        [
+          {
+            "node": "Limitar a 200",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Unir Dados",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Limitar a 200": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an Email": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Status": {
+      "main": [
+        [
+          {
+            "node": "Unir Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unir Dados": {
+      "main": [
+        [
+          {
+            "node": "Converter para XLSX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Converter para XLSX": {
+      "main": [
+        [
+          {
+            "node": "Salvar Arquivo Atualizado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "2c9aa5b2-6822-4aa7-9c47-5eaa45894c6e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7526f85b8a337e88c5fef3cd415ba3ce4d0a2f20a5fb980c44d86c16b94d1a91"
+  },
+  "nodeGroups": [],
+  "id": "dvlGzjoKrbVaRulz",
+  "tags": []
+}
