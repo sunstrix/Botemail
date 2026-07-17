@@ -1,215 +1,345 @@
 {
-  "name": "Envio de E-mails em Massa (Corrigido)",
+  "name": "Automação de Envio de E-mails (CORRIGIDO)",
   "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-768, 80],
+      "id": "manual-trigger-1",
+      "name": "When clicking 'Execute workflow'"
+    },
     {
       "parameters": {
         "rule": {
           "interval": [
             {
-              "field": "minutes",
-              "minutesInterval": 1440
+              "field": "days",
+              "intervalValue": 1
             }
-          ]
+          ],
+          "triggerAtHour": 9,
+          "triggerAtMinute": 0
         }
       },
-      "id": "4e1f5d6e-8a2b-4c3d-9e0f-1a2b3c4d5e6f",
-      "name": "Agendamento Diário",
-      "type": "n8n-nodes-base.ScheduleTrigger",
-      "typeVersion": 1,
-      "position": [250, 300]
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [-768, -80],
+      "id": "schedule-trigger-1",
+      "name": "Agendado Diariamente"
     },
     {
       "parameters": {
         "operation": "read",
-        "filePath": "/home/node/.n8n-files/contatos.xlsx",
-        "binaryPropertyName": "data"
+        "fileSelector": "/home/node/.n8n-files/contatos.xlsx",
+        "options": {}
       },
-      "id": "2f3e4d5c-6b7a-8c9d-0e1f-2a3b4c5d6e7f",
-      "name": "Ler Planilha",
-      "type": "n8n-nodes-base.ReadWriteFile",
-      "typeVersion": 1,
-      "position": [450, 300]
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [-560, 80],
+      "id": "read-file-1",
+      "name": "Read/Write Files from Disk"
     },
     {
       "parameters": {
-        "fileContent": "data",
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [-352, 80],
+      "id": "extract-1",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Garante que todos os itens tenham Nome, Email e Status\nfor (const item of $input.all()) {\n  if (!item.json.Nome) item.json.Nome = '';\n  if (!item.json.Email) item.json.Email = '';\n  // Se Status não existir ou for null/undefined, cria como string vazia\n  if (item.json.Status === undefined || item.json.Status === null || item.json.Status === 'null' || item.json.Status === 'undefined') {\n    item.json.Status = '';\n  }\n}\nreturn $input.all();",
+        "mode": "runOnceForAllItems"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-160, 80],
+      "id": "code-garantir-status",
+      "name": "Garantir Campos"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isEmpty",
+                "name": "filter.operator.isEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [40, 80],
+      "id": "if-status-vazio",
+      "name": "If Status Vazio"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Adiciona índice para controle de limite\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  items[i].json._idx = i;\n}\nreturn items;",
+        "mode": "runOnceForAllItems"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 80],
+      "id": "code-index",
+      "name": "Adicionar Índice"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "condition-2",
+              "leftValue": "={{ $json._idx }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "smaller",
+                "name": "filter.operator.smaller"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [440, 80],
+      "id": "if-limite",
+      "name": "Dentro do Limite (200)"
+    },
+    {
+      "parameters": {
+        "fromEmail": "supervisoras@didier.com.br",
+        "toEmail": "={{ $json.Email }}",
+        "subject": "=Sentimos sua falta, {{ $json.Nome }}!",
+        "emailFormat": "text",
+        "text": "=Olá, {{ $json.Nome }}, tudo bem?\n\nPassando para dizer que sentimos a sua falta por aqui!\n\nFale direto com a nossa equipe pelo WhatsApp:\n👉 https://wa.me/551143322311\n\nAbraços,",
+        "options": {
+          "onError": "continueErrorOutput"
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [640, 0],
+      "id": "send-email-1",
+      "name": "Send an Email",
+      "credentials": {
+        "smtp": {
+          "id": "WXHetXL3hNWApJKc",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Atualiza Status com data/hora ou erro\nconst now = new Date();\nconst dateStr = now.toLocaleDateString('pt-BR');\nconst timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });\n\nfor (const item of $input.all()) {\n  if (item.error) {\n    item.json.Status = 'Erro: ' + (item.error.message || 'Falha no envio');\n  } else {\n    item.json.Status = 'Enviado em ' + dateStr + ' às ' + timeStr;\n  }\n}\nreturn $input.all();",
+        "mode": "runOnceForAllItems"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [840, 0],
+      "id": "code-atualizar-status",
+      "name": "Atualizar Status"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Remove índice temporário dos enviados\nfor (const item of $input.all()) {\n  delete item.json._idx;\n}\nreturn $input.all();",
+        "mode": "runOnceForAllItems"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1040, 0],
+      "id": "code-limpar-a",
+      "name": "Limpar Índice (Enviados)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Remove índice temporário dos não enviados\nfor (const item of $input.all()) {\n  delete item.json._idx;\n}\nreturn $input.all();",
+        "mode": "runOnceForAllItems"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [640, 160],
+      "id": "code-limpar-b",
+      "name": "Limpar Índice (Não enviados)"
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1240, 160],
+      "id": "merge-1",
+      "name": "Unir Dados"
+    },
+    {
+      "parameters": {
+        "operation": "toFile",
+        "fileFormat": "xlsx",
         "options": {
           "headerRow": true,
           "sheetName": "Sheet1"
         }
       },
-      "id": "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
-      "name": "Extrair Dados",
-      "type": "n8n-nodes-base.ExtractFromFile",
+      "type": "n8n-nodes-base.spreadsheetFile",
       "typeVersion": 1,
-      "position": [650, 300]
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "// Este nó tem 2 outputs:\n// Output 0: todos os itens originais com _index\n// Output 1: apenas itens com Status vazio (candidatos)\nconst allItems = $input.all();\nconst todos = [];\nconst candidatos = [];\nfor (let i = 0; i < allItems.length; i++) {\n    const item = allItems[i];\n    // Garantir campos\n    item.json.Nome = item.json.Nome || '';\n    item.json.Email = item.json.Email || '';\n    item.json.Status = item.json.Status || '';\n    // Adicionar índice\n    item.json._index = i;\n    todos.push(item);\n    // Verificar se Status está vazio\n    const status = item.json.Status;\n    if (status === '' || status == null || status === undefined) {\n        candidatos.push(item);\n    }\n}\nreturn [todos, candidatos];",
-        "mode": "runOnceForEachItem"
-      },
-      "id": "5b6c7d8e-9f0a-1b2c-3d4e-5f6a7b8c9d0e",
-      "name": "Preparar e Separar",
-      "type": "n8n-nodes-base.Code",
-      "typeVersion": 2,
-      "position": [850, 300]
-    },
-    {
-      "parameters": {
-        "value": 200,
-        "mode": "limit"
-      },
-      "id": "6c7d8e9f-0a1b-2c3d-4e5f-6a7b8c9d0e1f",
-      "name": "Limitar 200",
-      "type": "n8n-nodes-base.Limit",
-      "typeVersion": 1,
-      "position": [1050, 450]
-    },
-    {
-      "parameters": {
-        "email": "{{ $json.Email }}",
-        "subject": "Sua mensagem personalizada",
-        "text": "Olá {{ $json.Nome }},\n\nEste é um e-mail automático.",
-        "options": {
-          "continueOnError": true
-        }
-      },
-      "id": "7d8e9f0a-1b2c-3d4e-5f6a-7b8c9d0e1f2a",
-      "name": "Enviar E-mail",
-      "type": "n8n-nodes-base.EmailSend",
-      "typeVersion": 1,
-      "position": [1250, 450],
-      "continueOnFail": true
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const items = $input.all();\nconst now = new Date();\nconst dataHora = now.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });\nfor (const item of items) {\n    const erro = item.json.error;\n    if (erro) {\n        item.json.Status = `Erro: ${erro.message || erro}`;\n    } else {\n        item.json.Status = `Enviado em ${dataHora}`;\n    }\n}\nreturn items;"
-      },
-      "id": "8e9f0a1b-2c3d-4e5f-6a7b-8c9d0e1f2a3b",
-      "name": "Atualizar Status",
-      "type": "n8n-nodes-base.Code",
-      "typeVersion": 2,
-      "position": [1450, 450]
-    },
-    {
-      "parameters": {
-        "inputs": 2
-      },
-      "id": "9f0a1b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
-      "name": "Merge (dois inputs)",
-      "type": "n8n-nodes-base.Merge",
-      "typeVersion": 2,
-      "position": [1450, 300],
-      "inputs": 2
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "// Input 0: todos os originais\n// Input 1: processados (já com Status atualizado)\nconst originais = $input.all()[0];\nconst processados = $input.all()[1];\nconst mapa = new Map();\nfor (const p of processados) {\n    mapa.set(p.json._index, p.json.Status);\n}\nconst resultado = [];\nfor (const item of originais) {\n    const idx = item.json._index;\n    if (mapa.has(idx)) {\n        item.json.Status = mapa.get(idx);\n    }\n    delete item.json._index;\n    resultado.push(item);\n}\nreturn resultado;"
-      },
-      "id": "0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d",
-      "name": "Mesclar e Remover _index",
-      "type": "n8n-nodes-base.Code",
-      "typeVersion": 2,
-      "position": [1650, 300]
-    },
-    {
-      "parameters": {
-        "options": {
-          "headerRow": true,
-          "sheetName": "Sheet1"
-        }
-      },
-      "id": "1b2c3d4e-5f6a-7b8c-9d0e-1f2a3b4c5d6e",
-      "name": "Converter para XLSX",
-      "type": "n8n-nodes-base.ConvertToXLSX",
-      "typeVersion": 1,
-      "position": [1850, 300]
+      "position": [1440, 160],
+      "id": "convert-xlsx-1",
+      "name": "Converter para XLSX"
     },
     {
       "parameters": {
         "operation": "write",
-        "filePath": "/home/node/.n8n-files/contatos.xlsx",
-        "binaryPropertyName": "data",
-        "options": {
-          "overwrite": true
-        }
+        "fileName": "/home/node/.n8n-files/contatos.xlsx",
+        "dataPropertyName": "data",
+        "options": {}
       },
-      "id": "2c3d4e5f-6a7b-8c9d-0e1f-2a3b4c5d6e7f",
-      "name": "Salvar Arquivo",
-      "type": "n8n-nodes-base.ReadWriteFile",
-      "typeVersion": 1,
-      "position": [2050, 300]
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [1640, 160],
+      "id": "write-file-1",
+      "name": "Salvar Arquivo Atualizado"
     }
   ],
   "connections": {
-    "Agendamento Diário": {
+    "When clicking 'Execute workflow'": {
       "main": [
         [
           {
-            "node": "Ler Planilha",
+            "node": "Read/Write Files from Disk",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Ler Planilha": {
+    "Agendado Diariamente": {
       "main": [
         [
           {
-            "node": "Extrair Dados",
+            "node": "Read/Write Files from Disk",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Extrair Dados": {
+    "Read/Write Files from Disk": {
       "main": [
         [
           {
-            "node": "Preparar e Separar",
+            "node": "Extract from File",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Preparar e Separar": {
+    "Extract from File": {
       "main": [
         [
           {
-            "node": "Merge (dois inputs)",
+            "node": "Garantir Campos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Garantir Campos": {
+      "main": [
+        [
+          {
+            "node": "If Status Vazio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Status Vazio": {
+      "main": [
+        [
+          {
+            "node": "Adicionar Índice",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Limitar 200",
+            "node": "Unir Dados",
             "type": "main",
-            "index": 0
+            "index": 1
           }
         ]
       ]
     },
-    "Limitar 200": {
+    "Adicionar Índice": {
       "main": [
         [
           {
-            "node": "Enviar E-mail",
+            "node": "Dentro do Limite (200)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Enviar E-mail": {
+    "Dentro do Limite (200)": {
       "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Limpar Índice (Não enviados)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an Email": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Atualizar Status",
@@ -223,25 +353,36 @@
       "main": [
         [
           {
-            "node": "Merge (dois inputs)",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge (dois inputs)": {
-      "main": [
-        [
-          {
-            "node": "Mesclar e Remover _index",
+            "node": "Limpar Índice (Enviados)",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Mesclar e Remover _index": {
+    "Limpar Índice (Enviados)": {
+      "main": [
+        [
+          {
+            "node": "Unir Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar Índice (Não enviados)": {
+      "main": [
+        [
+          {
+            "node": "Unir Dados",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Unir Dados": {
       "main": [
         [
           {
@@ -256,7 +397,7 @@
       "main": [
         [
           {
-            "node": "Salvar Arquivo",
+            "node": "Salvar Arquivo Atualizado",
             "type": "main",
             "index": 0
           }
@@ -265,7 +406,13 @@
     }
   },
   "active": false,
-  "settings": {},
-  "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
-  "pinData": {}
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "workflow-corrigido-1",
+  "tags": []
 }
