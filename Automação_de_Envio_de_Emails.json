@@ -7,7 +7,7 @@
       "typeVersion": 1,
       "position": [-768, 80],
       "id": "eaff00b4-34cf-4e9b-84f0-c10b5505ee38",
-      "name": "When clicking ‘Execute workflow’"
+      "name": "When clicking 'Execute workflow'"
     },
     {
       "parameters": {
@@ -53,6 +53,16 @@
     },
     {
       "parameters": {
+        "jsCode": "// Garante que TODOS os itens tenham os campos Nome, Email e Status\nfor (const item of $input.all()) {\n  // Se não tiver Status, cria como string vazia\n  if (item.json.Status === undefined || item.json.Status === null) {\n    item.json.Status = \"\";\n  }\n  // Garante que Nome e Email existam\n  if (!item.json.Nome) item.json.Nome = \"\";\n  if (!item.json.Email) item.json.Email = \"\";\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-160, 80],
+      "id": "code-garantir-status",
+      "name": "Garantir Campo Status"
+    },
+    {
+      "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
@@ -77,7 +87,7 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [-120, 80],
+      "position": [40, 80],
       "id": "91652148-993b-411c-918a-a533d4846c42",
       "name": "If Status Vazio"
     },
@@ -87,7 +97,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [80, 80],
+      "position": [240, 80],
       "id": "code-marcar-indice",
       "name": "Marcar Índice"
     },
@@ -117,7 +127,7 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
-      "position": [240, 80],
+      "position": [440, 80],
       "id": "if-limit-1",
       "name": "Dentro do Limite Diário"
     },
@@ -129,12 +139,12 @@
         "emailFormat": "text",
         "text": "=Olá, {{ $json.Nome }}, tudo bem?\n\nPassando para dizer que sentimos a sua falta por aqui! A nossa parceria sempre foi muito importante para nós, e queremos te ver brilhando e lucrando novamente.\n\nTemos muitas novidades, lançamentos incríveis e condições especiais preparadas exclusivamente para ajudar você a impulsionar suas vendas nesta temporada.\n\nQue tal reativar o seu cadastro hoje mesmo? É super rápido!\n\nPara conhecer as novidades e garantir suas vantagens, clique no link abaixo e fale direto com a nossa equipe pelo WhatsApp:\n👉 https://wa.me/551143322311\n\nEstamos te esperando de braços abertos!\n\nAbraços,",
         "options": {
-          "onError": "continueRegularOutput"
+          "onError": "continueErrorOutput"
         }
       },
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
-      "position": [400, 0],
+      "position": [640, 0],
       "id": "243964a9-3b9c-4597-a7a1-5780c39ffe5d",
       "name": "Send an Email",
       "webhookId": "a30eafa1-4693-461d-821c-ebf7fabf0de7",
@@ -151,7 +161,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [560, 0],
+      "position": [840, 0],
       "id": "code1",
       "name": "Atualizar Status"
     },
@@ -161,7 +171,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [720, 0],
+      "position": [1040, 0],
       "id": "code-limpar-a",
       "name": "Limpar Índice A"
     },
@@ -171,7 +181,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [400, 160],
+      "position": [640, 160],
       "id": "code-limpar-b",
       "name": "Limpar Índice B"
     },
@@ -181,7 +191,7 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
-      "position": [880, 160],
+      "position": [1240, 160],
       "id": "merge1",
       "name": "Unir Dados"
     },
@@ -189,11 +199,14 @@
       "parameters": {
         "operation": "toFile",
         "fileFormat": "xlsx",
-        "options": {}
+        "options": {
+          "headerRow": true,
+          "sheetName": "Sheet1"
+        }
       },
       "type": "n8n-nodes-base.spreadsheetFile",
       "typeVersion": 1,
-      "position": [1040, 160],
+      "position": [1440, 160],
       "id": "sheet1",
       "name": "Converter para XLSX"
     },
@@ -206,14 +219,14 @@
       },
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
-      "position": [1200, 160],
+      "position": [1640, 160],
       "id": "write1",
       "name": "Salvar Arquivo Atualizado"
     }
   ],
   "pinData": {},
   "connections": {
-    "When clicking ‘Execute workflow’": {
+    "When clicking 'Execute workflow'": {
       "main": [
         [
           {
@@ -247,6 +260,17 @@
       ]
     },
     "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Garantir Campo Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Garantir Campo Status": {
       "main": [
         [
           {
@@ -306,6 +330,13 @@
     },
     "Send an Email": {
       "main": [
+        [
+          {
+            "node": "Atualizar Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Atualizar Status",
